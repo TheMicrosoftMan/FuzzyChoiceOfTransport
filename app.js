@@ -60,6 +60,7 @@
 
 const fuzzylogic = require("fuzzylogic");
 const axios = require("axios");
+const {parse} = require("node-html-parser");
 const {buses, marshrutkas, tram, trol} = require('./transports');
 
 getCoordineate = async data => {
@@ -160,11 +161,20 @@ parseRoutes = data => {
     routes.push({
       transportLine: getPublicTransportLine(el.publicTransportLine),
       duration: el.leg[0].travelTime,
-      countOfTranspalnt: el.publicTransportLine.length
+      countOfTranspalnt: el.publicTransportLine.length,
+      instruction: getInstruction(el.leg[0].maneuver)
     });
   });
   return routes;
 };
+
+getInstruction = maneuver => {
+  let intr = "";
+  maneuver.forEach(el => {
+    intr += `${parse(`<div>${el.instruction}</div>`).rawText} \n`;
+  });
+  return intr;
+}
 
 determinePrice = transportLine => {
   let sumPrice = 0;
@@ -176,13 +186,13 @@ determinePrice = transportLine => {
   let normal = fuzzylogic.trapezoid(sumPrice, 7, 8, 9, 10);
   let bad = fuzzylogic.trapezoid(sumPrice, 10, 11, 100, 100);
   if (veryGood > good && veryGood > normal && veryGood > bad) {
-    return 2;
+    return 9;
   } else if (good > normal && good > bad) {
-    return 1;
+    return 7;
   } else if (normal > good && normal > bad) {
-    return 0;
+    return 5;
   } else {
-    return -1;
+    return 3;
   }
 };
 
@@ -193,11 +203,11 @@ determineComfort = transportLine => {
     let normal = fuzzylogic.trapezoid(el.comfort, 30, 35, 70, 75);
     let good = fuzzylogic.trapezoid(el.comfort, 70, 75, 100, 100);
     if (bad > normal && bad > good) {
-      resultMark += -1;
+      resultMark += 5;
     } else if (normal > bad && normal > good) {
-      resultMark += 0;
+      resultMark += 7;
     } else {
-      resultMark += 1;
+      resultMark += 9;
     }
   });
   return resultMark;
@@ -208,11 +218,11 @@ determineWaitTime = time => {
   let normal = fuzzylogic.trapezoid(time, 4, 5, 9, 10);
   let bad = fuzzylogic.trapezoid(time, 10, 11, 100, 100);
   if (good > normal && good > bad) {
-    return 1;
+    return 9;
   } else if (normal > good && normal > bad) {
-    return 0;
+    return 7;
   } else {
-    return -1;
+    return 5;
   }
 };
 
@@ -222,11 +232,11 @@ determineDuration = seconds => {
   let normal = fuzzylogic.trapezoid(minutes, 18, 25, 40, 45);
   let bad = fuzzylogic.trapezoid(minutes, 43, 50, 70, 100);
   if (good > normal && good > bad) {
-    return 1;
+    return 9;
   } else if (normal > good && normal > bad) {
-    return 0;
+    return 7;
   } else {
-    return -1;
+    return 5;
   }
 };
 
@@ -236,13 +246,13 @@ determineTransplants = transplants => {
   let bad = fuzzylogic.trapezoid(transplants, 2, 3, 3, 4);
   let veryBad = fuzzylogic.trapezoid(transplants, 3, 4, 100, 100);
   if (good > normal && good > bad && good > veryBad) {
-    return 1;
+    return 9;
   } else if (normal > good && normal > bad && normal > veryBad) {
-    return 0;
+    return 7;
   } else if (bad > veryBad && bad > bad && bad > good) {
-    return -1
+    return 5
   } else {
-    return -2;
+    return 3;
   }
 };
 
@@ -272,10 +282,39 @@ getRouteFuzzyMark = routers => {
     return routersWithMarks;
 }
 
+sort = (arr) => {
+  return arr.sort((a, b) => {
+      if (a.fuzzyMark < b.fuzzyMark) {
+          return -1;
+      } else if (a.fuzzyMark > b.fuzzyMark) {
+          return 1;
+      } else {
+          return 0;
+      }
+  });
+};
+
+showAllRoutes = routes => {
+  console.log("\x1b[42m", `Most better route for you is an ${routes[0].el.transportLine[0].lineName} ${routes[0].el.transportLine[0].transportType}\n`);
+  routes.forEach(el => {
+    if (el.el.transportLine.length > 1) {
+      console.log("\x1b[41m", "Route for you with transplants. First go to");
+      el.el.transportLine.forEach(ell => {
+        console.log("\x1b[41m", `   ${ell.lineName} ${ell.transportType} then`);
+        console.log(ell.instruction);
+    });
+    } else {
+      console.log("\x1b[41m", `Route for you ${el.el.transportLine[0].lineName} ${el.el.transportLine[0].transportType}`);  
+      console.log(el.el.instruction);  
+    }    
+  });
+}
+
 main = async () => {
   let result = await getRoutes("вінниця чехова", "вінниця соборна");
   let res = await getRouteFuzzyMark(result);
-  console.log(`Most better route for you is an ${res[0].el.transportLine[0].lineName} ${res[0].el.transportLine[0].transportType}`);
+  let sorted = sort(res);
+  showAllRoutes(sorted);
 };
 
 main();
