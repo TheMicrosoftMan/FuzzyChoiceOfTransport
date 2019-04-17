@@ -1,67 +1,14 @@
-// const fuzzylogic = require('fuzzylogic');
-
-// var threatCalc = function(threat) {
-//     var probabNoAttack          = fuzzylogic.triangle(threat, 0, 20, 40);
-//     var probabNormalAttack      = fuzzylogic.trapezoid(threat, 20, 30, 90, 100);
-//     var probabEnragedAttack     = fuzzylogic.grade(threat, 90, 100);
-//     console.log('Threat: ' + threat);
-//     console.log('no attack: '       + probabNoAttack);
-//     console.log('normal attack: '   + probabNormalAttack);
-//     console.log('enraged attack: '  + probabEnragedAttack);
-// };
-
-/*
-    Оцінка ціни:
-    Маршрутка: 10
-    Автобус: 30
-    Трамвай: 90
-    Тролейбус: 90
-    */
-
-/*
-    Оцінка комфорту:
-    Маршрутка: 90
-    Автобус: 70
-    Трамвай: 50
-    Тролейбус: 30
-    */
-
-/*
-    Оцінка часу очікування:
-    Маршрутка: 90
-    Автобус: 70
-    Трамвай: 50
-    Тролейбус: 30
-    */
-
-/*
-    Оцінка тривалості поїздки:
-    Маршрутка: 90
-    Автобус: 70
-    Трамвай: 50
-    Тролейбус: 30
-    */
-
-/*
-    Оцінка кількості пересадок:
-    Маршрутка: 90
-    Автобус: 70
-    Трамвай: 50
-    Тролейбус: 30
-    */
-
 // оцінка ціни (дорого, середнє, дешево) ()
 // оцінка комфорту ((рівень зношеності) - не зручно, середня зручність, зручно)
 // оцінка часу очікування ((популярність маршрута) - довго, задовільно, швидко)
 // оцінка тривалості поїздки (довго, задовільно, швидко)
 // оцінка кількості пересадок (з більше 1 пересадок, з 1 пересадкою, без пересадок)
 
-// threatCalc(100);
-
 const fuzzylogic = require("fuzzylogic");
 const axios = require("axios");
 const {parse} = require("node-html-parser");
 const {buses, marshrutkas, tram, trol} = require('./transports');
+const readline = require('readline');
 
 getCoordineate = async data => {
   return new Promise((resolve, reject) => {
@@ -80,9 +27,6 @@ getCoordineate = async data => {
       .catch(error => {
         reject(error);
       });
-    // .then(function () {
-    //     // always executed
-    // });
   });
 };
 
@@ -108,14 +52,11 @@ getRoutes = async (start, finish) => {
     axios
       .get(url)
       .then(response => {
-        resolve(parseRoutes(response.data.response.route)); //response.data.response.route[0].publicTransportLine
+        resolve(parseRoutes(response.data.response.route));
       })
       .catch(error => {
         reject(error);
       });
-    // .then(function () {
-    //     // always executed
-    // });
   });
 };
 
@@ -259,13 +200,11 @@ determineTransplants = transplants => {
 fuzzyScheme = route => {
   let fuzzyPrice =  determinePrice(route.transportLine),
     fuzzyComfort = determineComfort(route.transportLine),
-    // fuzzyWaitTime = determineWaitTime(route.transportLine),
     fuzzyDuration = determineDuration(route.duration),
     fuzzyTranspalnts = determineTransplants(route.countOfTranspalnt);
   let fuzzyMark =
     fuzzyPrice +
     fuzzyComfort +
-    // fuzzyWaitTime +
     fuzzyDuration +
     fuzzyTranspalnts;
   return fuzzyMark;
@@ -298,14 +237,14 @@ showAllRoutes = routes => {
   console.log("\x1b[42m", `Most better route for you is an ${routes[0].el.transportLine[0].lineName} ${routes[0].el.transportLine[0].transportType}\n`);
   routes.forEach(el => {
     if (el.el.transportLine.length > 1) {
-      console.log("\x1b[41m", "Route for you with transplants. First go to");
+      console.log("\x1b[44m", "Route for you with transplants. First go to");
       el.el.transportLine.forEach(ell => {
-        console.log("\x1b[41m", `   ${ell.lineName} ${ell.transportType} then`);
-        console.log(ell.instruction);
+        console.log("\x1b[45m", `   ${ell.lineName} ${ell.transportType} then`);
+        console.log("\x1b[0m", el.el.instruction);
     });
     } else {
-      console.log("\x1b[41m", `Route for you ${el.el.transportLine[0].lineName} ${el.el.transportLine[0].transportType}`);  
-      console.log(el.el.instruction);  
+      console.log("\x1b[44m", `Route for you ${el.el.transportLine[0].lineName} ${el.el.transportLine[0].transportType}`);  
+      console.log("\x1b[0m", el.el.instruction);
     }    
   });
 }
