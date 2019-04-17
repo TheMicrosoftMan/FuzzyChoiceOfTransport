@@ -8,7 +8,6 @@ const fuzzylogic = require("fuzzylogic");
 const axios = require("axios");
 const {parse} = require("node-html-parser");
 const {buses, marshrutkas, tram, trol} = require('./transports');
-const readline = require('readline');
 
 getCoordineate = async data => {
   return new Promise((resolve, reject) => {
