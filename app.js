@@ -23,8 +23,8 @@ getCoordineate = async data => {
             response.data.Response.View[0].Result[0].Location.Address.Label
         });
       })
-      .catch(error => {
-        reject(error);
+      .catch(() => {
+        console.error(`Can't find "${data}"`)
       });
   });
 };
@@ -53,8 +53,8 @@ getRoutes = async (start, finish) => {
       .then(response => {
         resolve(parseRoutes(response.data.response.route));
       })
-      .catch(error => {
-        reject(error);
+      .catch(() => {
+        console.error(`Error in compiling the route ${points.waypoint1.address} - ${points.waypoint2.address}`);
       });
   });
 };
